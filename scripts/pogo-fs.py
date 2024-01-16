@@ -19,13 +19,24 @@ odom_laser_data = pd.read_csv(odom_laser_csv)
 print(odom_motor_data)
 print(odom_laser_data)
 
+prior_pose = None
+current_pose = None
+
 for index, row in odom_motor_data.iterrows():
+    if current_pose != None:
+        prior_pose = current_pose
+
     # time = row["Time"]
     # print(row)
     quaternion_list = [row['pose.pose.orientation.x'],row['pose.pose.orientation.y'],row['pose.pose.orientation.z'],row['pose.pose.orientation.w']]
     quat = np.array(quaternion_list[:4], dtype=np.float64, copy=True)
 
     euler = tr.euler_from_quaternion(quat)
-    print(quaternion_list)
-    print(euler)
-    # print(time)
+    pose = [row['pose.pose.position.x'], row['pose.pose.position.y'], euler[2]]
+    current_pose = pose
+    print(pose)
+    if prior_pose != None:
+        # find the l2 norm, determine angle distance
+
+
+
