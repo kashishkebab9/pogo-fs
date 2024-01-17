@@ -7,6 +7,7 @@ import math
 import matplotlib
 import matplotlib.pyplot
 import os
+import pcl
 
 pose_graph = nx.Graph()
 bag = bagpy.bagreader('../bags/2023-01-26-15-26-20.bag')
@@ -20,16 +21,17 @@ cloud_csv = bag.message_by_topic(cloud_topic)
 odom_motor_data = pd.read_csv(odom_motor_csv)
 cloud_data = pd.read_csv(cloud_csv)
 
-directory = "../bags/pcd"
-list_of_pcds = None
+directory = "../bags/pcd/"
+list_of_pcds = []
 for filename in os.listdir(directory):
     filename=filename[:-4]
     filename=float(filename)
     list_of_pcds.append(filename)
 
-
 prior_pose = None
 current_pose = None
+prior_cloud = None
+current_cloud = None
 
 node_counter = 0
 for index, row in odom_motor_data.iterrows():
@@ -43,8 +45,30 @@ for index, row in odom_motor_data.iterrows():
     pose = [row['pose.pose.position.x'], row['pose.pose.position.y'], euler[2]]
     if prior_pose == None:
         prior_pose = pose
+        zero_time = row['Time']
+        closest_time_dist = 100000
+        pcd_index = None
+        for i in range(len(list_of_pcds)):
+            diff = abs(list_of_pcds[i] - zero_time)
+            if diff < closest_time_dist:
+                closest_time_dist = diff
+                pcd_index = i
+        prior_cloud = list_of_pcds[i]
+        print(list_of_pcds)
+
+        # find timestamp that closesly resembles and grab pcd file
         continue
     current_pose = pose
+    current_time = row['Time']
+    closest_time_dist = 100000
+    pcd_index = None
+    for i in range(len(list_of_pcds)):
+        diff = abs(list_of_pcds[i] - zero_time)
+        if diff < closest_time_dist:
+            closest_time_dist = diff
+            pcd_index = i
+    current_cloud = list_of_pcds[pcd_index]
+    # grab the current timestamp closest pcd file
 
     if prior_pose != None and current_pose != None:
         # find the l2 norm, determine angle distance
@@ -59,7 +83,34 @@ for index, row in odom_motor_data.iterrows():
             pose_graph.add_node(node_counter)
             if node_counter > 0:
                 pose_graph.add_edge(node_counter - 1, node_counter)
+
+            prior_cloud = str(prior_cloud)
+            current_cloud = str(current_cloud)
+            if len(prior_cloud) < 20:
+                num_zeroes = 20 - len(str(prior_cloud))
+                print(num_zeroes)
+                for i in range(num_zeroes):
+                    prior_cloud += '0'
+            if len(current_cloud) < 20:
+                num_zeroes = 20 - len(str(current_cloud))
+                print(num_zeroes)
+                for i in range(num_zeroes):
+                    current_cloud += '0'
+
+            prior_cloud_file = directory + str(prior_cloud) + ".pcd"
+            print(prior_cloud_file)
+            current_cloud_file = directory + str(current_cloud) + ".pcd"
+            print(current_cloud_file)
+
+            prior_pcd = pcl.load(prior_cloud_file)
+            current_pcd = pcl.load(current_cloud_file)
+            icp = prior_pcd.make_IterativeClosestPoint()
+            icp.icp(prior_pcd, current_pcd)
+            print(transf)
+            print(converged)
+            
             prior_pose = current_pose
+            prior_cloud = current_cloud
 
             node_counter+=1
 
@@ -71,6 +122,3 @@ if True:
     fig.savefig("front-end.png")
 else:
     matplotlib.pyplot.show()
-
-
-        
