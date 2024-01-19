@@ -7,7 +7,7 @@ import math
 import matplotlib
 import matplotlib.pyplot
 import os
-import pcl
+import open3d as o3d
 
 pose_graph = nx.Graph()
 bag = bagpy.bagreader('../bags/2023-01-26-15-26-20.bag')
@@ -37,7 +37,6 @@ node_counter = 0
 for index, row in odom_motor_data.iterrows():
 
     # time = row["Time"]
-    # print(row)
     quaternion_list = [row['pose.pose.orientation.x'],row['pose.pose.orientation.y'],row['pose.pose.orientation.z'],row['pose.pose.orientation.w']]
     quat = np.array(quaternion_list[:4], dtype=np.float64, copy=True)
 
@@ -54,7 +53,6 @@ for index, row in odom_motor_data.iterrows():
                 closest_time_dist = diff
                 pcd_index = i
         prior_cloud = list_of_pcds[i]
-        print(list_of_pcds)
 
         # find timestamp that closesly resembles and grab pcd file
         continue
@@ -88,26 +86,32 @@ for index, row in odom_motor_data.iterrows():
             current_cloud = str(current_cloud)
             if len(prior_cloud) < 20:
                 num_zeroes = 20 - len(str(prior_cloud))
-                print(num_zeroes)
                 for i in range(num_zeroes):
                     prior_cloud += '0'
             if len(current_cloud) < 20:
                 num_zeroes = 20 - len(str(current_cloud))
-                print(num_zeroes)
                 for i in range(num_zeroes):
                     current_cloud += '0'
 
             prior_cloud_file = directory + str(prior_cloud) + ".pcd"
-            print(prior_cloud_file)
             current_cloud_file = directory + str(current_cloud) + ".pcd"
-            print(current_cloud_file)
 
-            prior_pcd = pcl.load(prior_cloud_file)
-            current_pcd = pcl.load(current_cloud_file)
-            icp = prior_pcd.make_IterativeClosestPoint()
-            icp.icp(prior_pcd, current_pcd)
-            print(transf)
-            print(converged)
+            # prior_pcd = pcl.load(prior_cloud_file)
+            # current_pcd = pcl.load(current_cloud_file)
+            
+            prior_pcd = o3d.io.read_point_cloud(prior_cloud_file)
+            current_pcd = o3d.io.read_point_cloud(current_cloud_file)
+            prior_points = np.asarray(prior_pcd.points)
+            current_points = np.asarray(current_pcd.points)
+
+            criteria = o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=100)
+            reg_result = o3d.pipelines.registration.registration_icp(
+                    prior_pcd, current_pcd,  # Source and target point clouds
+                    max_correspondence_distance=0.05,  # Maximum correspondence distance
+                    criteria=criteria  # ICP convergence criteria
+                    )
+            transformation_matrix = reg_result.transformation
+            print(transformation_matrix)
             
             prior_pose = current_pose
             prior_cloud = current_cloud
@@ -120,5 +124,3 @@ nx.draw(pose_graph, ax=fig.add_subplot())
 if True: 
     matplotlib.use("Agg") 
     fig.savefig("front-end.png")
-else:
-    matplotlib.pyplot.show()
