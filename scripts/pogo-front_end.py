@@ -96,9 +96,6 @@ for index, row in odom_motor_data.iterrows():
             prior_cloud_file = directory + str(prior_cloud) + ".pcd"
             current_cloud_file = directory + str(current_cloud) + ".pcd"
 
-            # prior_pcd = pcl.load(prior_cloud_file)
-            # current_pcd = pcl.load(current_cloud_file)
-            
             prior_pcd = o3d.io.read_point_cloud(prior_cloud_file)
             current_pcd = o3d.io.read_point_cloud(current_cloud_file)
             prior_points = np.asarray(prior_pcd.points)
@@ -106,17 +103,26 @@ for index, row in odom_motor_data.iterrows():
 
             criteria = o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=100)
             reg_result = o3d.pipelines.registration.registration_icp(
-                    prior_pcd, current_pcd,  # Source and target point clouds
-                    max_correspondence_distance=0.05,  # Maximum correspondence distance
+                    prior_pcd, current_pcd,  
+                    max_correspondence_distance=0.10,  # Maximum correspondence distance
                     criteria=criteria  # ICP convergence criteria
                     )
             transformation_matrix = reg_result.transformation
             print(transformation_matrix)
-            
+
+
             prior_pose = current_pose
             prior_cloud = current_cloud
-
             node_counter+=1
+            # o3d.visualization.draw_geometries([prior_pcd, current_pcd],
+            #                       zoom=0.3412,
+            #                       front=[0.4257, -0.2125, -0.8795],
+            #                       lookat=[2.6172, 2.0475, 1.532],
+            #                       up=[-0.0694, -0.9768, 0.2024])
+            print(prior_cloud_file)
+            print(current_cloud_file)
+
+
 
 print("Generating Graph....")
 fig = matplotlib.pyplot.figure()
