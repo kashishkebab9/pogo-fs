@@ -61,7 +61,7 @@ for index, row in odom_motor_data.iterrows():
     closest_time_dist = 100000
     pcd_index = None
     for i in range(len(list_of_pcds)):
-        diff = abs(list_of_pcds[i] - zero_time)
+        diff = abs(list_of_pcds[i] - current_time)
         if diff < closest_time_dist:
             closest_time_dist = diff
             pcd_index = i
@@ -78,6 +78,8 @@ for index, row in odom_motor_data.iterrows():
         ang_diff = abs(prior_pose[2] - current_pose[2])
 
         if l2_norm > .5 or ang_diff > .5:
+            print(current_time)
+
             pose_graph.add_node(node_counter)
             if node_counter > 0:
                 pose_graph.add_edge(node_counter - 1, node_counter)
@@ -114,11 +116,17 @@ for index, row in odom_motor_data.iterrows():
             prior_pose = current_pose
             prior_cloud = current_cloud
             node_counter+=1
-            # o3d.visualization.draw_geometries([prior_pcd, current_pcd],
-            #                       zoom=0.3412,
-            #                       front=[0.4257, -0.2125, -0.8795],
-            #                       lookat=[2.6172, 2.0475, 1.532],
-            #                       up=[-0.0694, -0.9768, 0.2024])
+            o3d.visualization.draw_geometries([prior_pcd, current_pcd],
+                                  zoom=0.3412,
+                                  front=[0.4257, -0.2125, -0.8795],
+                                  lookat=[2.6172, 2.0475, 1.532],
+                                  up=[-0.0694, -0.9768, 0.2024])
+            new_prior = prior_pcd.transform(transformation_matrix)
+            o3d.visualization.draw_geometries([new_prior, current_pcd],
+                                  zoom=0.3412,
+                                  front=[0.4257, -0.2125, -0.8795],
+                                  lookat=[2.6172, 2.0475, 1.532],
+                                  up=[-0.0694, -0.9768, 0.2024])
             print(prior_cloud_file)
             print(current_cloud_file)
 
