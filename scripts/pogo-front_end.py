@@ -103,15 +103,14 @@ for index, row in odom_motor_data.iterrows():
             prior_points = np.asarray(prior_pcd.points)
             current_points = np.asarray(current_pcd.points)
 
-            criteria = o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=100)
+            criteria = o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=1000)
             reg_result = o3d.pipelines.registration.registration_icp(
                     prior_pcd, current_pcd,  
-                    max_correspondence_distance=0.10,  # Maximum correspondence distance
-                    criteria=criteria  # ICP convergence criteria
+                    max_correspondence_distance=2.00,  # Maximum correspondence distance
+                    criteria=criteria
                     )
             transformation_matrix = reg_result.transformation
             print(transformation_matrix)
-
 
             prior_pose = current_pose
             prior_cloud = current_cloud
