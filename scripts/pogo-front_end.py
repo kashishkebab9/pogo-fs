@@ -126,9 +126,13 @@ for index, row in odom_motor_data.iterrows():
                 motion_model_tf_matrix[1,3] = -1 * motion_model_tf_matrix[1,3]
             print("icp transformation: ", transformation_matrix)
 
-            prior_pose = current_pose
-            prior_cloud = current_cloud
-            node_counter+=1
+            w_better_init_result = o3d.pipelines.registration.registration_icp(
+                    prior_pcd, current_pcd,  
+                    max_correspondence_distance=2.00,  # Maximum correspondence distance
+                    init=motion_model_tf_matrix,
+                    estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint()
+                    )
+            init_transformation_matrix = w_better_init_result.transformation
 
             o3d.visualization.draw_geometries([prior_pcd, current_pcd],
                                   zoom=0.3412,
@@ -141,16 +145,23 @@ for index, row in odom_motor_data.iterrows():
             #                       front=[0.4257, -0.2125, -0.8795],
             #                       lookat=[2.6172, 2.0475, 1.532],
             #                       up=[-0.0694, -0.9768, 0.2024])
-            motion_model_prior = prior_pcd.transform(motion_model_tf_matrix)
-            o3d.visualization.draw_geometries([motion_model_prior, current_pcd],
+            # motion_model_prior = prior_pcd.transform(motion_model_tf_matrix)
+            # o3d.visualization.draw_geometries([motion_model_prior, current_pcd],
+            #                       zoom=0.3412,
+            #                       front=[0.4257, -0.2125, -0.8795],
+            #                       lookat=[2.6172, 2.0475, 1.532],
+            #                       up=[-0.0694, -0.9768, 0.2024])
+            with_better_init_prior = prior_pcd.transform(init_transformation_matrix)
+            o3d.visualization.draw_geometries([with_better_init_prior, current_pcd],
                                   zoom=0.3412,
                                   front=[0.4257, -0.2125, -0.8795],
                                   lookat=[2.6172, 2.0475, 1.532],
                                   up=[-0.0694, -0.9768, 0.2024])
+            prior_pose = current_pose
+            prior_cloud = current_cloud
+            node_counter+=1
             # print(prior_cloud_file)
             # print(current_cloud_file)
-
-
 
 print("Generating Graph....")
 fig = matplotlib.pyplot.figure()
