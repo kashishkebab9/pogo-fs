@@ -121,6 +121,9 @@ for index, row in odom_motor_data.iterrows():
                     criteria=criteria
                     )
             transformation_matrix = reg_result.transformation
+            if transformation_matrix[0, 3] < 0:
+                motion_model_tf_matrix[0,3] = -1 * motion_model_tf_matrix[0,3]
+                motion_model_tf_matrix[1,3] = -1 * motion_model_tf_matrix[1,3]
             print("icp transformation: ", transformation_matrix)
 
             prior_pose = current_pose
