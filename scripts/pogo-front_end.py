@@ -52,7 +52,7 @@ for index, row in odom_motor_data.iterrows():
             if diff < closest_time_dist:
                 closest_time_dist = diff
                 pcd_index = i
-        prior_cloud = list_of_pcds[i]
+        prior_cloud = list_of_pcds[pcd_index]
 
         # find timestamp that closesly resembles and grab pcd file
         continue
@@ -71,14 +71,25 @@ for index, row in odom_motor_data.iterrows():
     if prior_pose != None and current_pose != None:
         # find the l2 norm, determine angle distance
         l2_norm = math.sqrt((current_pose[0] - prior_pose[0]) **2 + (current_pose[1] - prior_pose[1]) ** 2)
-        if current_pose[2] < 0:
-            current_pose[2] = math.pi - current_pose[2]
-        if prior_pose[2] < 0:
-            prior_pose[2] = math.pi - prior_pose[2]
-        ang_diff = abs(prior_pose[2] - current_pose[2])
 
-        if l2_norm > .5 or ang_diff > .5:
-            print(current_time)
+        # if current_pose[2] < 0:
+        #     current_pose[2] = math.pi - current_pose[2]
+        # if prior_pose[2] < 0:
+        #     prior_pose[2] = math.pi - prior_pose[2]
+
+        ang_diff = prior_pose[2] - current_pose[2] 
+
+        if l2_norm > .5 or abs(ang_diff) > .5:
+            print("prior_ang: ", prior_pose[2])
+            print("current_ang: ", current_pose[2])
+            print(ang_diff)
+            motion_model_tf_matrix = np.array([[math.cos(ang_diff), -1*math.sin(ang_diff), 0, (prior_pose[0] - current_pose[0])],
+                                               [math.sin(ang_diff), math.cos(ang_diff), 0, (prior_pose[1] - current_pose[1])],
+                                               [0, 0, 1, 0],
+                                               [0, 0, 0, 1]])
+            print("motionmodel")
+            print(motion_model_tf_matrix)
+            # print(current_time)
 
             pose_graph.add_node(node_counter)
             if node_counter > 0:
@@ -110,24 +121,31 @@ for index, row in odom_motor_data.iterrows():
                     criteria=criteria
                     )
             transformation_matrix = reg_result.transformation
-            print(transformation_matrix)
+            print("icp transformation: ", transformation_matrix)
 
             prior_pose = current_pose
             prior_cloud = current_cloud
             node_counter+=1
+
             o3d.visualization.draw_geometries([prior_pcd, current_pcd],
                                   zoom=0.3412,
                                   front=[0.4257, -0.2125, -0.8795],
                                   lookat=[2.6172, 2.0475, 1.532],
                                   up=[-0.0694, -0.9768, 0.2024])
-            new_prior = prior_pcd.transform(transformation_matrix)
-            o3d.visualization.draw_geometries([new_prior, current_pcd],
+            # new_prior = prior_pcd.transform(transformation_matrix)
+            # o3d.visualization.draw_geometries([new_prior, current_pcd],
+            #                       zoom=0.3412,
+            #                       front=[0.4257, -0.2125, -0.8795],
+            #                       lookat=[2.6172, 2.0475, 1.532],
+            #                       up=[-0.0694, -0.9768, 0.2024])
+            motion_model_prior = prior_pcd.transform(motion_model_tf_matrix)
+            o3d.visualization.draw_geometries([motion_model_prior, current_pcd],
                                   zoom=0.3412,
                                   front=[0.4257, -0.2125, -0.8795],
                                   lookat=[2.6172, 2.0475, 1.532],
                                   up=[-0.0694, -0.9768, 0.2024])
-            print(prior_cloud_file)
-            print(current_cloud_file)
+            # print(prior_cloud_file)
+            # print(current_cloud_file)
 
 
 
