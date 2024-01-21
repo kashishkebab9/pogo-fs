@@ -8,10 +8,11 @@ import matplotlib
 import matplotlib.pyplot
 import os
 import open3d as o3d
+from alive_progress import alive_bar
+import time
 
 pose_graph = nx.Graph()
 bag = bagpy.bagreader('../bags/2023-01-26-15-26-20.bag')
-print(bag.topic_table)
 odom_motor_topic = "/scarab41/odom_motor"
 cloud_topic = "/scarab41/laser_cloud"
 
@@ -34,6 +35,7 @@ prior_cloud = None
 current_cloud = None
 
 node_counter = 0
+
 for index, row in odom_motor_data.iterrows():
 
     # time = row["Time"]
@@ -80,20 +82,12 @@ for index, row in odom_motor_data.iterrows():
         ang_diff = prior_pose[2] - current_pose[2] 
 
         if l2_norm > .5 or abs(ang_diff) > .5:
-            print("prior_ang: ", prior_pose[2])
-            print("current_ang: ", current_pose[2])
-            print(ang_diff)
             motion_model_tf_matrix = np.array([[math.cos(ang_diff), -1*math.sin(ang_diff), 0, (prior_pose[0] - current_pose[0])],
                                                [math.sin(ang_diff), math.cos(ang_diff), 0, (prior_pose[1] - current_pose[1])],
                                                [0, 0, 1, 0],
                                                [0, 0, 0, 1]])
-            print("motionmodel")
-            print(motion_model_tf_matrix)
-            # print(current_time)
 
             pose_graph.add_node(node_counter)
-            if node_counter > 0:
-                pose_graph.add_edge(node_counter - 1, node_counter)
 
             prior_cloud = str(prior_cloud)
             current_cloud = str(current_cloud)
@@ -125,7 +119,6 @@ for index, row in odom_motor_data.iterrows():
             if transformation_matrix[0, 3] < 0:
                 motion_model_tf_matrix[0,3] = -1 * motion_model_tf_matrix[0,3]
                 motion_model_tf_matrix[1,3] = -1 * motion_model_tf_matrix[1,3]
-            print("icp transformation: ", transformation_matrix)
 
             w_better_init_result = o3d.pipelines.registration.registration_icp(
                     prior_pcd, current_pcd,  
@@ -139,10 +132,13 @@ for index, row in odom_motor_data.iterrows():
 
             z_j_i = np.linalg.inv(z_i_j)
             before_t2v = z_j_i @ t_i_j
-            t2v = np.array([[before_t2v[0,3]], [before_t2v[1,3]], [np.arccos(before_t2v[0,0])]])
-            print(t2v)
+            e_i_j = np.array([[before_t2v[0,3]], [before_t2v[1,3]], [np.arccos(before_t2v[0,0])]])
 
-
+            information_matrix = np.array([[400,   0,   0],
+                                           [  0, 400,   0],
+                                           [  0,   0, 100]])
+            if node_counter > 0:
+                pose_graph.add_edge(node_counter - 1, node_counter, error_x=e_i_j[0,0], error_y=e_i_j[1,0], error_theta=e_i_j[2,0])
 
             with_better_init_prior = prior_pcd.transform(z_i_j)
 
@@ -151,13 +147,14 @@ for index, row in odom_motor_data.iterrows():
                                   front=[0.4257, -0.2125, -0.8795],
                                   lookat=[2.6172, 2.0475, 1.532],
                                   up=[-0.0694, -0.9768, 0.2024])
-            
 
             prior_pose = current_pose
             prior_cloud = current_cloud
             node_counter+=1
 
 print("Generating Graph....")
+print(pose_graph)
+nx.write_graphml(pose_graph, "pose_graph.graphml")
 fig = matplotlib.pyplot.figure()
 nx.draw(pose_graph, ax=fig.add_subplot())
 if True: 
