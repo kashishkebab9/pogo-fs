@@ -1,6 +1,8 @@
 import networkx as nx
 import numpy as np
 import math
+import sys
+np.set_printoptions(threshold=np.inf)
 
 pose_graph = nx.read_graphml("pose_graph.graphml")
 print(pose_graph)
@@ -59,5 +61,18 @@ for edge in pose_graph.edges(data=True):
     hessian_ij = A.transpose() @ information_matrix @ B
     hessian_ji = B.transpose() @ information_matrix @ A
     hessian_jj = B.transpose() @ information_matrix @ B
+    print("Hessian ii: ", hessian_ii)
+    print("Hessian ij: ", hessian_ij)
+    print("Hessian ji: ", hessian_ji)
+    print("Hessian jj: ", hessian_jj)
 
+    start_index_i = int(i) * 3
+    start_index_j = int(j) * 3
+
+    Hessian[start_index_i:start_index_i+3, start_index_i:start_index_i+3] = hessian_ii
+    Hessian[start_index_i:start_index_i+3, start_index_j:start_index_j+3] = hessian_ij
+    Hessian[start_index_j:start_index_j+3, start_index_i:start_index_i+3] = hessian_ji
+    Hessian[start_index_j:start_index_j+3, start_index_j:start_index_j+3] = hessian_jj
+
+# print(Hessian)
 
