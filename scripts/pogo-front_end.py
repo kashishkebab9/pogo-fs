@@ -133,24 +133,29 @@ for index, row in odom_motor_data.iterrows():
                     init=motion_model_tf_matrix,
                     estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint()
                     )
-            init_transformation_matrix = w_better_init_result.transformation
-            num_points_prior = len(prior_pcd.points)
-            num_points_current = len(current_pcd.points)
 
-            green_color = np.array([0.0, 1.0, 0.0])  # RGB values for green
-            blue_color = np.array([0.0, 0.0, 1.0])  # RGB values for green
-            red_color = np.array([1.0, 0.0, 1.0])  # RGB values for green
-            black_color = np.array([0.0, 0.0, 0.0])  # RGB values for green
-            # prior_pcd.colors = o3d.utility.Vector3dVector(np.tile(black_color, (num_points_prior, 1)))
-            current_pcd.colors = o3d.utility.Vector3dVector(np.tile(blue_color, (num_points_current, 1)))
+            z_i_j = w_better_init_result.transformation
+            t_i_j = motion_model_tf_matrix
+
+            z_j_i = np.linalg.inv(z_i_j)
+            before_t2v = z_j_i @ t_i_j
+            t2v = np.array([[before_t2v[0,3]], [before_t2v[1,3]], [np.arccos(before_t2v[0,0])]])
+            print(t2v)
 
 
-            with_better_init_prior = prior_pcd.transform(init_transformation_matrix)
+
+            with_better_init_prior = prior_pcd.transform(z_i_j)
+
             o3d.visualization.draw_geometries([with_better_init_prior, current_pcd],
                                   zoom=0.3412,
                                   front=[0.4257, -0.2125, -0.8795],
                                   lookat=[2.6172, 2.0475, 1.532],
                                   up=[-0.0694, -0.9768, 0.2024])
+            
+
+            prior_pose = current_pose
+            prior_cloud = current_cloud
+            node_counter+=1
 
 print("Generating Graph....")
 fig = matplotlib.pyplot.figure()
