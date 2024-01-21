@@ -114,7 +114,8 @@ for index, row in odom_motor_data.iterrows():
             prior_points = np.asarray(prior_pcd.points)
             current_points = np.asarray(current_pcd.points)
 
-            criteria = o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=1000)
+            criteria = o3d.pipelines.registration.ICPConvergenceCriteria(
+                    relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=1000)
             reg_result = o3d.pipelines.registration.registration_icp(
                     prior_pcd, current_pcd,  
                     max_correspondence_distance=2.00,  # Maximum correspondence distance
@@ -133,35 +134,25 @@ for index, row in odom_motor_data.iterrows():
                     estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint()
                     )
             init_transformation_matrix = w_better_init_result.transformation
+            num_points_prior = len(prior_pcd.points)
+            num_points_current = len(current_pcd.points)
 
-            o3d.visualization.draw_geometries([prior_pcd, current_pcd],
-                                  zoom=0.3412,
-                                  front=[0.4257, -0.2125, -0.8795],
-                                  lookat=[2.6172, 2.0475, 1.532],
-                                  up=[-0.0694, -0.9768, 0.2024])
-            # new_prior = prior_pcd.transform(transformation_matrix)
-            # o3d.visualization.draw_geometries([new_prior, current_pcd],
-            #                       zoom=0.3412,
-            #                       front=[0.4257, -0.2125, -0.8795],
-            #                       lookat=[2.6172, 2.0475, 1.532],
-            #                       up=[-0.0694, -0.9768, 0.2024])
-            # motion_model_prior = prior_pcd.transform(motion_model_tf_matrix)
-            # o3d.visualization.draw_geometries([motion_model_prior, current_pcd],
-            #                       zoom=0.3412,
-            #                       front=[0.4257, -0.2125, -0.8795],
-            #                       lookat=[2.6172, 2.0475, 1.532],
-            #                       up=[-0.0694, -0.9768, 0.2024])
+            green_color = np.array([0.0, 1.0, 0.0])  # RGB values for green
+            blue_color = np.array([0.0, 0.0, 1.0])  # RGB values for green
+            red_color = np.array([1.0, 0.0, 1.0])  # RGB values for green
+            black_color = np.array([0.0, 0.0, 0.0])  # RGB values for green
+            prior_pcd.colors = o3d.utility.Vector3dVector(np.tile(black_color, (num_points_prior, 1)))
+            current_pcd.colors = o3d.utility.Vector3dVector(np.tile(blue_color, (num_points_current, 1)))
+
+
             with_better_init_prior = prior_pcd.transform(init_transformation_matrix)
             o3d.visualization.draw_geometries([with_better_init_prior, current_pcd],
                                   zoom=0.3412,
                                   front=[0.4257, -0.2125, -0.8795],
                                   lookat=[2.6172, 2.0475, 1.532],
                                   up=[-0.0694, -0.9768, 0.2024])
-            prior_pose = current_pose
-            prior_cloud = current_cloud
-            node_counter+=1
-            # print(prior_cloud_file)
-            # print(current_cloud_file)
+            
+
 
 print("Generating Graph....")
 fig = matplotlib.pyplot.figure()
