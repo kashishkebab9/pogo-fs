@@ -141,7 +141,7 @@ for index, row in odom_motor_data.iterrows():
             blue_color = np.array([0.0, 0.0, 1.0])  # RGB values for green
             red_color = np.array([1.0, 0.0, 1.0])  # RGB values for green
             black_color = np.array([0.0, 0.0, 0.0])  # RGB values for green
-            prior_pcd.colors = o3d.utility.Vector3dVector(np.tile(black_color, (num_points_prior, 1)))
+            # prior_pcd.colors = o3d.utility.Vector3dVector(np.tile(black_color, (num_points_prior, 1)))
             current_pcd.colors = o3d.utility.Vector3dVector(np.tile(blue_color, (num_points_current, 1)))
 
 
@@ -151,8 +151,6 @@ for index, row in odom_motor_data.iterrows():
                                   front=[0.4257, -0.2125, -0.8795],
                                   lookat=[2.6172, 2.0475, 1.532],
                                   up=[-0.0694, -0.9768, 0.2024])
-            
-
 
 print("Generating Graph....")
 fig = matplotlib.pyplot.figure()
@@ -160,3 +158,7 @@ nx.draw(pose_graph, ax=fig.add_subplot())
 if True: 
     matplotlib.use("Agg") 
     fig.savefig("front-end.png")
+
+## BACKEND
+
+
