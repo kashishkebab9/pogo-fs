@@ -71,13 +71,8 @@ for index, row in odom_motor_data.iterrows():
     # grab the current timestamp closest pcd file
 
     if prior_pose != None and current_pose != None:
-        # find the l2 norm, determine angle distance
         l2_norm = math.sqrt((current_pose[0] - prior_pose[0]) **2 + (current_pose[1] - prior_pose[1]) ** 2)
 
-        # if current_pose[2] < 0:
-        #     current_pose[2] = math.pi - current_pose[2]
-        # if prior_pose[2] < 0:
-        #     prior_pose[2] = math.pi - prior_pose[2]
 
         ang_diff = prior_pose[2] - current_pose[2] 
 
@@ -127,26 +122,31 @@ for index, row in odom_motor_data.iterrows():
                     estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint()
                     )
 
-            z_i_j = w_better_init_result.transformation
-            t_i_j = motion_model_tf_matrix
-
-            z_j_i = np.linalg.inv(z_i_j)
-            before_t2v = z_j_i @ t_i_j
-            e_i_j = np.array([[before_t2v[0,3]], [before_t2v[1,3]], [np.arccos(before_t2v[0,0])]])
-
+            x_i = prior_pose[0]
+            x_j = current_pose[0]
+            x_z = w_better_init_result.transformation[0,3] + x_i 
+            y_i = prior_pose[1]
+            y_j = current_pose[1]
+            y_z = w_better_init_result.transformation[1,3] + y_i
+            psi = np.arccos(w_better_init_result.transformation[0,0])
+            alpha = np.arccos(motion_model_tf_matrix[0,0])
             information_matrix = np.array([[400,   0,   0],
                                            [  0, 400,   0],
                                            [  0,   0, 100]])
             if node_counter > 0:
-                pose_graph.add_edge(node_counter - 1, node_counter, error_x=e_i_j[0,0], error_y=e_i_j[1,0], error_theta=e_i_j[2,0])
+                pose_graph.add_edge(node_counter - 1, node_counter,
+                                    x_i=x_i, x_j=x_j, x_z=x_z,
+                                    y_i=y_i, y_j=y_j, y_z=y_z,
+                                    psi=psi, alpha=alpha)
 
-            with_better_init_prior = prior_pcd.transform(z_i_j)
 
-            o3d.visualization.draw_geometries([with_better_init_prior, current_pcd],
-                                  zoom=0.3412,
-                                  front=[0.4257, -0.2125, -0.8795],
-                                  lookat=[2.6172, 2.0475, 1.532],
-                                  up=[-0.0694, -0.9768, 0.2024])
+            ## TO VISUALIZE ##
+            # with_better_init_prior = prior_pcd.transform(z_i_j)
+            # o3d.visualization.draw_geometries([with_better_init_prior, current_pcd],
+            #                       zoom=0.3412,
+            #                       front=[0.4257, -0.2125, -0.8795],
+            #                       lookat=[2.6172, 2.0475, 1.532],
+            #                       up=[-0.0694, -0.9768, 0.2024])
 
             prior_pose = current_pose
             prior_cloud = current_cloud
@@ -160,7 +160,3 @@ nx.draw(pose_graph, ax=fig.add_subplot())
 if True: 
     matplotlib.use("Agg") 
     fig.savefig("front-end.png")
-
-## BACKEND
-
-
