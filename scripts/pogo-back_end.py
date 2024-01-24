@@ -2,20 +2,18 @@ import networkx as nx
 import numpy as np
 import math
 import sys
+from scikits.sparse.cholmod import cholesky
+
 np.set_printoptions(threshold=np.inf)
 
 pose_graph = nx.read_graphml("pose_graph.graphml")
-print(pose_graph)
 num_nodes = nx.number_of_nodes(pose_graph)
 H = np.zeros((num_nodes * 3, num_nodes * 3))
 b = np.zeros((num_nodes * 3))
-print(H.shape)
 
 for edge in pose_graph.edges(data=True):
 
     edge_source, edge_target, edge_attr = edge
-    print(edge_source)
-    print(edge_target)
 
     x_i = edge_attr["x_i"]
     x_j = edge_attr["x_j"]   
@@ -62,10 +60,6 @@ for edge in pose_graph.edges(data=True):
     h_ij = A.transpose() @ information_matrix @ B
     h_ji = B.transpose() @ information_matrix @ A
     h_jj = B.transpose() @ information_matrix @ B
-    print("H ii: ", h_ii)
-    print("H ij: ", h_ij)
-    print("H ji: ", h_ji)
-    print("H jj: ", h_jj)
 
     start_index_i = int(i) * 3
     start_index_j = int(j) * 3
@@ -83,11 +77,8 @@ for edge in pose_graph.edges(data=True):
                      [e_ij_y],
                      [e_ij_theta]])
 
-    print(b.shape)
-    print(edge_source)
     b_i = A.transpose() @ information_matrix @ e_ij
     b_j = B.transpose() @ information_matrix @ e_ij
-    print(b_i)
     b[int(edge_source)*3]   += b_i[0]
     b[int(edge_source)*3 + 1] += b_i[1]
     b[int(edge_source)*3 + 2] += b_i[2]
@@ -95,6 +86,6 @@ for edge in pose_graph.edges(data=True):
     b[int(edge_target)*3 ]   += b_j[0]
     b[int(edge_target)*3 +1] += b_j[1]
     b[int(edge_target)*3 +2] += b_j[2]
-print(b)
-print(b.shape)
+factor = cholesky
+
 
