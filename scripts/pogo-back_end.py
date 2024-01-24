@@ -8,6 +8,7 @@ pose_graph = nx.read_graphml("pose_graph.graphml")
 print(pose_graph)
 num_nodes = nx.number_of_nodes(pose_graph)
 H = np.zeros((num_nodes * 3, num_nodes * 3))
+b = np.zeros((num_nodes * 3))
 print(H.shape)
 
 for edge in pose_graph.edges(data=True):
@@ -69,9 +70,31 @@ for edge in pose_graph.edges(data=True):
     start_index_i = int(i) * 3
     start_index_j = int(j) * 3
 
-    H[start_index_i:start_index_i+3, start_index_i:start_index_i+3] = h_ii
-    H[start_index_i:start_index_i+3, start_index_j:start_index_j+3] = h_ij
-    H[start_index_j:start_index_j+3, start_index_i:start_index_i+3] = h_ji
-    H[start_index_j:start_index_j+3, start_index_j:start_index_j+3] = h_jj
+    H[start_index_i:start_index_i+3, start_index_i:start_index_i+3] += h_ii
+    H[start_index_i:start_index_i+3, start_index_j:start_index_j+3] += h_ij
+    H[start_index_j:start_index_j+3, start_index_i:start_index_i+3] += h_ji
+    H[start_index_j:start_index_j+3, start_index_j:start_index_j+3] += h_jj
 
+    e_ij_x = (x_j - x_i) - (x_z - x_i)
+    e_ij_y = (y_j - y_i) - (y_z - x_i)
+    e_ij_theta = alpha - psi
+
+    e_ij = np.array([[e_ij_x],
+                     [e_ij_y],
+                     [e_ij_theta]])
+
+    print(b.shape)
+    print(edge_source)
+    b_i = A.transpose() @ information_matrix @ e_ij
+    b_j = B.transpose() @ information_matrix @ e_ij
+    print(b_i)
+    b[int(edge_source)*3]   += b_i[0]
+    b[int(edge_source)*3 + 1] += b_i[1]
+    b[int(edge_source)*3 + 2] += b_i[2]
+
+    b[int(edge_target)*3 ]   += b_j[0]
+    b[int(edge_target)*3 +1] += b_j[1]
+    b[int(edge_target)*3 +2] += b_j[2]
+print(b)
+print(b.shape)
 

@@ -22,7 +22,7 @@ e_i_j = [[before_t2v(1,3)];
 
 variables = [x_i, y_i, theta_i]
 
-A =simplify([[diff(e_i_j(1), x_i), diff(e_i_j(1), y_j), diff(e_i_j(1), theta_i)] ;
+A =simplify([[diff(e_i_j(1), x_i), diff(e_i_j(1), y_i), diff(e_i_j(1), theta_i)] ;
             [diff(e_i_j(2), x_i), diff(e_i_j(2), y_i), diff(e_i_j(2), theta_i)] ;
             [diff(e_i_j(3), x_i), diff(e_i_j(3), y_i), diff(e_i_j(3), theta_i)]])
 
